@@ -76,6 +76,11 @@
 			<artifactId>spring-boot-starter-data-mongodb-reactive-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.chubb</groupId>
+			<artifactId>flight-ticket-booking</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<build>
