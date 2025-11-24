@@ -11,15 +11,15 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class AirlineServiceImpl implements AirlineService {
 
-    private final AirlineRepository airlineRepository;
+	private final AirlineRepository airlineRepository;
 
-    @Override
-    public Mono<Airline> addAirline(Airline airline) {
-        return airlineRepository.save(airline);
-    }
+	@Override
+	public Mono<Airline> addAirline(Airline airline) {
+		return airlineRepository.save(airline);
+	}
 
-    @Override
-    public Mono<Airline> findByCode(String code) {
-        return airlineRepository.findByCode(code);
-    }
+	@Override
+	public Mono<Airline> findByCode(String code) {
+		return airlineRepository.findByCode(code);
+	}
 }

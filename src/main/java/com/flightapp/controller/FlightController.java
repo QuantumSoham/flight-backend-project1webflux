@@ -2,7 +2,6 @@ package com.flightapp.controller;
 
 import com.flightapp.dto.*;
 import com.flightapp.entity.Airline;
-import com.flightapp.entity.Flight;
 import com.flightapp.service.AirlineService;
 import com.flightapp.service.BookingService;
 import com.flightapp.service.FlightService;
