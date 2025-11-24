@@ -8,7 +8,7 @@ public class SearchRequest
 {
   private String fromPlace;
   private String toPlace;
-  private Instant departureDate;
+  private java.time.LocalDate departureDate; // 
   private boolean roundTrip;
   private Instant returnDate;//i am keeping this as a optional param
 }

@@ -14,4 +14,5 @@ public class BookingResponse {
     private int numberOfSeats;
     private Instant bookingDateTime;
     private String status;
+    private String bookingId;
 }

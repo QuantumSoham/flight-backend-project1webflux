@@ -6,6 +6,8 @@ import lombok.Data;
 import java.time.Instant;
 import java.util.List;
 
+import com.flightapp.entity.BookingStatus;
+
 @Data
 @Builder
 public class TicketDTO {
@@ -16,6 +18,6 @@ public class TicketDTO {
     private String userName;
     private String userEmail;
     private Instant journeyDateTime;
-    private String status;
+    private BookingStatus status;
     private List<PassengerDTO> passengers;
 }

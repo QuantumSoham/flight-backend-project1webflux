@@ -23,6 +23,7 @@ public class Booking {
     private Integer numberOfSeats;
     private Instant bookingDateTime;
     private Instant journeyDateTime;
+    private String BookingId;
     private BookingStatus status;
     // store passenger ids inline or as embedded docs; we will store passengers as separate collection
 }
