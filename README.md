@@ -179,25 +179,103 @@ server:
   port: 8080
 ```
 
-Testing the API with curl
+Testing the API 
 
-Create a flight:
+A collection of REST endpoints to test your Flight Ticket Booking System (Spring WebFlux + Reactive MongoDB).
 
-```bash
-curl -X POST http://localhost:8080/flights \
-  -H "Content-Type: application/json" \
-  -d '{ "flightNumber": "AI101", "origin": "DEL", "destination": "BOM", "departure": "2025-12-01T10:00:00" }'
+# 1. Add Airline Inventory
+
+POST
+http://localhost:8051/api/v1.0/flight/airline/inventory/{airlineCode}
+
+Example:
+
+http://localhost:8051/api/v1.0/flight/airline/inventory/TA
+
+Request Body (JSON)
+``` javascript
+{
+  "flightNumber": "TA-101",
+  "fromPlace": "Delhi",
+  "toPlace": "Mumbai",
+  "departureDateTime": "2025-12-12T10:15:00Z",
+  "arrivalDateTime": "2025-12-12T12:25:00Z",
+  "priceOneWay": 3500.0,
+  "priceRoundTrip": 6500.0,
+  "totalSeats": 180
+}
 ```
+# 2. Search Flights
 
-Create a booking:
+POST
+http://localhost:8051/api/v1.0/flight/search
 
-```bash
-curl -X POST http://localhost:8080/bookings \
-  -H "Content-Type: application/json" \
-  -d '{ "flightId": "<flightId>", "passenger": { "name": "Alex", "email": "alex@example.com" } }'
+Request Body (JSON)
+``` javascript
+{
+  "fromPlace": "Delhi",
+  "toPlace": "Mumbai",
+  "journeyDate": "2025-12-12",
+  "roundTrip": false
+}
 ```
+# 3. Book Ticket
 
-The response will include the pnr and booking details.
+POST
+http://localhost:8051/api/v1.0/flight/booking/{flightId}
+
+Request Body (JSON)
+``` javascript
+{
+  "userId": "USER001",
+  "userName": "Soham",
+  "userEmail": "soham@example.com",
+  "numberOfSeats": 2,
+  "passengers": [
+    {
+      "name": "Rahul",
+      "gender": "MALE",
+      "age": 28,
+      "seatNumber": "12A",
+      "mealType": "VEG"
+    },
+    {
+      "name": "Kiran",
+      "gender": "FEMALE",
+      "age": 26,
+      "seatNumber": "12B",
+      "mealType": "NON_VEG"
+    }
+  ]
+}
+```
+# 4. Get Booking History by Email
+
+GET
+http://localhost:8051/api/v1.0/flight/booking/history/{email}
+
+Example:
+
+http://localhost:8051/api/v1.0/flight/booking/history/soham@example.com
+
+# 5. Get Ticket by PNR
+
+GET
+http://localhost:8051/api/v1.0/flight/ticket/{pnr}
+
+Example:
+
+http://localhost:8051/api/v1.0/flight/ticket/PNR12345
+
+# 6. Cancel Ticket
+
+DELETE
+http://localhost:8051/api/v1.0/flight/booking/cancel/{pnr}
+
+Example:
+
+http://localhost:8051/api/v1.0/flight/booking/cancel/PNR12345
+
 
 Operational notes and trade offs
 - Make the pnr length long enough to make collisions extremely unlikely. I used 10 alphanumeric characters which gives a large key space.
