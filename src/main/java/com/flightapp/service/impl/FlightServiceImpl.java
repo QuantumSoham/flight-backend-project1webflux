@@ -3,7 +3,6 @@ package com.flightapp.service.impl;
 import com.flightapp.dto.CreateFlightRequest;
 import com.flightapp.dto.SearchRequest;
 import com.flightapp.dto.SearchResultDTO;
-import com.flightapp.entity.Airline;
 import com.flightapp.entity.Flight;
 import com.flightapp.repository.AirlineRepository;
 import com.flightapp.repository.FlightRepository;
@@ -26,52 +25,71 @@ public class FlightServiceImpl implements FlightService {
 	private final AirlineRepository airlineRepository;
 	private final ReactiveMongoTemplate template;
 
-	/**
-	 * Aggregation-based search: - Converts LocalDate -> start/end Instant in
-	 * Asia/Kolkata zone - Matches fromPlace, toPlace and departureDateTime in
-	 * [start, end) - Looks up Airline document and unwinds it - Projects fields
-	 * that map to SearchResultDTO
-	 *
-	 * NOTE: this uses collection names "Flight" and "Airline" (case-sensitive) to
-	 * match your DB. If your collections are named differently, change the
-	 * collection names below.
-	 */
 	@Override
 	public Flux<SearchResultDTO> searchFlights(SearchRequest request) {
-
-		System.out.println("Hit aggregation searchFlights");
-
-		// Convert LocalDate → Instant range in IST
+		// Documenting the aggregation pipeline for my convinience:
+		// Converting LocalDate into an instant range for that whole day.
+		// Mongo stores date as Instant, so to match by date only,
+		// we generate "start of the day" and "start of next day".
 		ZoneId zone = ZoneId.of("Asia/Kolkata");
 		Instant start = request.getDepartureDate().atStartOfDay(zone).toInstant();
 		Instant end = request.getDepartureDate().plusDays(1).atStartOfDay(zone).toInstant();
 
+		// This match stage filters the flights early.
+		// So at this point we only allow documents where:
+		// - fromPlace == request.fromPlace
+		// - toPlace == request.toPlace
+		// - departureDateTime is inside the date range we just calculated.
 		MatchOperation match = Aggregation.match(Criteria.where("fromPlace").is(request.getFromPlace()).and("toPlace")
 				.is(request.getToPlace()).and("departureDateTime").gte(start).lt(end));
 
-		LookupOperation lookupAirline = LookupOperation.newLookup().from("airlines") // << correct lowercase collection
-				.localField("airlineId").foreignField("_id").as("airline");
+		// Now I join the airline details into each flight document.
+		// Mongo doesn't have JOINs, so this is the lookup stage.
+		// from() = source collection
+		// localField() = field in flights
+		// foreignField() = id in airlines
+		// as() = new array field added to the pipeline output
+		LookupOperation lookupAirline = LookupOperation.newLookup().from("airlines").localField("airlineId")
+				.foreignField("_id").as("airline");
 
-		Aggregation agg = Aggregation.newAggregation(match, lookupAirline, Aggregation.unwind("airline"),
-				Aggregation
-						.project("flightNumber", "departureDateTime", "arrivalDateTime", "priceOneWay",
-								"priceRoundTrip", "availableSeats")
-						.and("airline.name").as("airlineName").and("airline.logoUrl").as("airlineLogoUrl").and("_id")
-						.as("flightId"));
+		// Unwinding because lookup produces an array.
+		// But each flight belongs to exactly one airline,
+		// so converting the array into a single object makes the final projection
+		// cleaner.
+		UnwindOperation unwindAirline = Aggregation.unwind("airline");
 
-		// IMPORTANT: lowercase collection name
+		// Final projection.
+		// This stage decides exactly what the output looks like.
+		// I pick out only the fields that my SearchResultDTO needs.
+		// Anything not projected here doesn't reach the response.
+		ProjectionOperation project = Aggregation
+				.project("flightNumber", "departureDateTime", "arrivalDateTime", "priceOneWay", "priceRoundTrip",
+						"availableSeats")
+				.and("airline.name").as("airlineName").and("airline.logoUrl").as("airlineLogoUrl").and("_id")
+				.as("flightId");
+
+		// Building the entire aggregation pipeline step-by-step.
+		Aggregation agg = Aggregation.newAggregation(match, lookupAirline, unwindAirline, project);
+
+		// Running the entire pipeline on the "flights" collection
+		// and mapping the final shaped output to SearchResultDTO.
 		return template.aggregate(agg, "flights", SearchResultDTO.class);
 	}
 
 	@Override
 	public reactor.core.publisher.Mono<Void> addInventory(String airlineCode, CreateFlightRequest req) {
 
+		// First I check if an airline with the given code even exists.
+		// If not found -> throw NOT_FOUND.
 		return airlineRepository.findByCode(airlineCode)
 				.switchIfEmpty(
 						reactor.core.publisher.Mono.error(new org.springframework.web.server.ResponseStatusException(
 								org.springframework.http.HttpStatus.NOT_FOUND,
 								"Airline with code '" + airlineCode + "' not found")))
 				.flatMap(airline -> {
+
+					// Constructing the flight document from the request.
+					// availableSeats defaults to totalSeats if not provided.
 					Flight flight = Flight.builder().airlineId(airline.getId()).flightNumber(req.getFlightNumber())
 							.fromPlace(req.getFromPlace()).toPlace(req.getToPlace())
 							.departureDateTime(req.getDepartureDateTime()).arrivalDateTime(req.getArrivalDateTime())
@@ -81,10 +99,9 @@ public class FlightServiceImpl implements FlightService {
 									req.getAvailableSeats() != null ? req.getAvailableSeats() : req.getTotalSeats())
 							.build();
 
-					// If you want to ensure uniqueness (flightNumber + departureDateTime), you can
-					// add a check here.
+					// Saving into Mongo.
 					return flightRepository.save(flight);
-				}).then(); // return Mono<Void>
+				}).then(); // returning Mono<Void>
 	}
 
 }
