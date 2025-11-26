@@ -15,7 +15,7 @@ public class AirlineServiceImpl implements AirlineService {
 
 	@Override
 	public Mono<Airline> addAirline(Airline airline) {
-		//here i have used simple save function of mongo , no aggregation used
+		//here i have used simple save function of mongodb , no aggregation used
 		return airlineRepository.save(airline);
 		
 	}
