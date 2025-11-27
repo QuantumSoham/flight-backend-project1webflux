@@ -39,4 +39,10 @@ public class CreateFlightRequest {
 
 	// optional: if not provided we will set availableSeats = totalSeats
 	private Integer availableSeats;
+	
+    @AssertTrue(message = "arrivalDateTime must be after departureDateTime")
+    public boolean isChronological() {
+        if (departureDateTime == null || arrivalDateTime == null) return true; // let @NotNull handle nulls
+        return arrivalDateTime.isAfter(departureDateTime) || arrivalDateTime.equals(departureDateTime);
+    }
 }

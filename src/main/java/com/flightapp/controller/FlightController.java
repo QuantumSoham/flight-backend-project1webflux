@@ -20,7 +20,7 @@ import jakarta.validation.Valid;
 //Tells Spring this class handles REST APIs and returns JSON directly.
 @RestController
 //Base path for all APIs in this controller.
-@RequestMapping("/api/v1.0/flight")
+@RequestMapping("/api/flight")
 //Auto-generates constructor for final fields. Enables constructor injection cleanly.
 @RequiredArgsConstructor
 

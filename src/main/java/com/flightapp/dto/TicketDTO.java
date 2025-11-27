@@ -14,10 +14,10 @@ public class TicketDTO {
     private String pnr;
     private String flightId;
     private String flightNumber;
-    private String airlineName;
     private String userName;
     private String userEmail;
     private Instant journeyDateTime;
     private BookingStatus status;
-    private List<PassengerDTO> passengers;
+//    private String airlineName;
+//    private List<PassengerDTO> passengers;
 }
